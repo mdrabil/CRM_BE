@@ -1,5 +1,5 @@
 import PatientModel from "../models/PatientData.js";
-
+import moment from 'moment'
 // CREATE
 export const createPatient = async (req, res) => {
   const {
@@ -19,6 +19,19 @@ console.log('name',patientName)
     if (existing) {
       return res.status(400).json({ message: "Patient with same name and phone already exists" });
     }
+    const today = moment().startOf("day");
+    const tomorrow = moment(today).add(1, "days");
+
+    // Get count of today's patients
+    const count = await PatientModel.countDocuments({
+      createdAt: {
+        $gte: today.toDate(),
+        $lt: tomorrow.toDate(),
+      },
+    });
+
+    const patientCode = (count + 1).toString().padStart(3, "0"); // "001", "002", ...
+
 
     const patient = new PatientModel({
       patientName,
@@ -28,10 +41,11 @@ console.log('name',patientName)
       address,
       phone,
       gender,
-      status
+      status,
+      patientCode
     });
 
-    await patient.validate(); // Manual validation before save
+    // await patient.validate(); 
     await patient.save();
 
     res.status(201).json({ message: "Patient created", patient });

@@ -14,6 +14,11 @@ dotenv.config();
 connectDB();
 
 const app = express();
+
+// app.use(cors({
+//     origin:''
+// }))
+app.use(cors())
 app.use(express.json());
 app.use(bodyParser.json())
 
@@ -25,6 +30,7 @@ app.use("/api/admin",RolesRoutes);
 app.use("/api/patients",PatientRoutes);
 app.use('/api/auth', AuthRoutes);
 app.use('/api/treatments', TreatmentRoutes);
+
 
 
 

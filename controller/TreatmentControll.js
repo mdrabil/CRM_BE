@@ -13,9 +13,54 @@ import Treatment from "../models/Treatment.js";
 
 
 
+// export const createTreatment = async (req, res) => {
+//   try {
+//     const {  patientId, date, doctorName, medicines } = req.body;
+
+//     // Validate required fields
+//     if (!patientId) {
+//       return res.status(400).json({ message: "Patient name and ID are required" });
+//     }
+
+//     // Optionally check if patient exists in Patient model (if available)
+//     const existingPatient = await PatientModel.findById(patientId);
+//     if (!existingPatient) {
+//       return res.status(404).json({ message: "Patient not found" });
+//     }
+
+
+
+
+//     // Create new treatment
+//     const treatment = new Treatment({
+      
+//       patientId,
+//       date,
+//       doctorName,
+//       medicines,
+//     });
+
+//     console.log('success')
+//     await treatment.save();
+//     console.log('success 1')
+
+//     // ✅ Update patient status to 'treated'
+//     existingPatient.status = "treated";
+//     console.log('success2')
+
+//     await existingPatient.save();
+//     console.log('success3')
+
+//     res.status(201).json({ message: "Treatment created successfully", treatment });
+//   } catch (error) {
+//     res.status(500).json({ message: "Error creating treatment", error: error.message });
+//   }
+// };
+
+
 export const createTreatment = async (req, res) => {
   try {
-    const {  patientId, date, doctorName, medicines } = req.body;
+    const {  patientId, patientmedicine } = req.body;
 
     // Validate required fields
     if (!patientId) {
@@ -28,23 +73,42 @@ export const createTreatment = async (req, res) => {
       return res.status(404).json({ message: "Patient not found" });
     }
 
-    // Create new treatment
-    const treatment = new Treatment({
+
+    // Convert patientmedicine to medicines as per schema
+    const medicines = patientmedicine.map((med) => ({
+      name: med.name,
+      quantity: 1, // Or dynamic if needed
+      dosageMl: med.dose ? parseFloat(med.dose) : undefined,
+      type: med.name.toLowerCase().includes("syrup") ? "Syrup" : "Tablet", // Just example logic
+      times: med.frequency,
       
+    }));
+
+    // Create new treatment
+       const newTreatment = new Treatment({
       patientId,
-      date,
-      doctorName,
       medicines,
+      doctorName: "Dr. ABC", 
+      
     });
 
-    await treatment.save();
 
-    res.status(201).json({ message: "Treatment created successfully", treatment });
+    console.log('success')
+    await newTreatment.save();
+    console.log('success 1')
+
+    // ✅ Update patient status to 'treated'
+    existingPatient.status = "treated";
+    console.log('success2')
+
+    await existingPatient.save();
+    console.log('success3')
+
+    res.status(201).json({ message: "Treatment created successfully", newTreatment });
   } catch (error) {
     res.status(500).json({ message: "Error creating treatment", error: error.message });
   }
 };
-
 
 // READ ALL
 export const getAllTreatments = async (req, res) => {

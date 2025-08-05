@@ -12,7 +12,7 @@ const patientSchema = new mongoose.Schema({
   },
     age: {
     type: Number,
-    required: [true, "Date of birth is required"],
+    // required: [true, "Date of birth is required"],
   },
   reasonForVisit: {
     type: String,
@@ -35,7 +35,11 @@ const patientSchema = new mongoose.Schema({
   status: {
     type: String,
     default: "new",
-  }
+  },
+    patientCode: {
+    type: String,
+    required: true,
+  },
 }, {
   timestamps: true
 });

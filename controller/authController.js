@@ -35,7 +35,7 @@ export const register = async (req, res) => {
 // ✅ Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
-
+console.log('username',email)
   const user = await UserModel.findOne({ email }).populate('role');
   if (!user) return res.status(404).json({ message: 'User not found' });
 
