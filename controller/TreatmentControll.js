@@ -60,7 +60,7 @@ import Treatment from "../models/Treatment.js";
 
 export const createTreatment = async (req, res) => {
   try {
-    const {  patientId, patientmedicine } = req.body;
+    const {  patientId, patientmedicine ,patinentProblem,symptoms  } = req.body;
 
     // Validate required fields
     if (!patientId) {
@@ -81,15 +81,15 @@ export const createTreatment = async (req, res) => {
       dosageMl: med.dose ? parseFloat(med.dose) : undefined,
       type: med.name.toLowerCase().includes("syrup") ? "Syrup" : "Tablet", // Just example logic
       times: med.frequency,
-      
     }));
-
+    
     // Create new treatment
-       const newTreatment = new Treatment({
+    const newTreatment = new Treatment({
       patientId,
       medicines,
       doctorName: "Dr. ABC", 
-      
+      patinentProblem,
+      symptoms
     });
 
 
@@ -122,8 +122,16 @@ export const getAllTreatments = async (req, res) => {
 
 // READ BY ID
 export const getTreatmentById = async (req, res) => {
+  
+  console.log('patinet id',req.params?.id)
   try {
-    const treatment = await Treatment.findById(req.params.id).populate("patientId");
+
+    const treatment = await Treatment.find({ patientId: req.params.id }).populate("patientId");
+
+    // const treatment = await Treatment.findById(req.params.id).populate("patientId");
+
+// console.log('data',treatment)
+
     if (!treatment) return res.status(404).json({ message: "Treatment not found" });
     res.status(200).json(treatment);
   } catch (error) {

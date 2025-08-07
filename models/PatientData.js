@@ -16,7 +16,9 @@ const patientSchema = new mongoose.Schema({
   },
   reasonForVisit: {
     type: String,
-    default: "",
+    required: [true, "This Filled is required"],
+
+    // default: "",
   },
   address: {
     type: String,
@@ -40,6 +42,8 @@ const patientSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  fixedPermanentId: { type: String, unique: true, },
+
 }, {
   timestamps: true
 });

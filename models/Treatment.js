@@ -8,15 +8,15 @@ const medicineSchema = new mongoose.Schema({
   dosageMl: { type: Number }, // Only for Syrup
   type: { type: String, enum: ["Tablet", "Syrup", "Injection"] },
   times: {
-    morning: {
+    सुबह: {
       beforeMeal: { type: Boolean, default: false },
       afterMeal: { type: Boolean, default: false },
     },
-    afternoon: {
+    दोपहर: {
       beforeMeal: { type: Boolean, default: false },
       afterMeal: { type: Boolean, default: false },
     },
-    night: {
+    रात: {
       beforeMeal: { type: Boolean, default: false },
       afterMeal: { type: Boolean, default: false },
     },
@@ -32,6 +32,13 @@ const treatmentSchema = new mongoose.Schema(
       required: true,
     },
     doctorName: { type: String },
+    patinentProblem:{
+      type:String,
+    },
+       symptoms:{
+      type:String,
+      
+    },
     date: { type: Date, default: Date.now },
     medicines: [medicineSchema],
   },
