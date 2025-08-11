@@ -5,10 +5,11 @@ import dotenv from 'dotenv'
 import connectDB from './DB/connectDB.js';
 // const medicineRoutes = require("./routes/medicineRoutes");
 import medicineRoutes from "./routes/MedicineRoutes.js";
-import RolesRoutes from "./routes/UserRoute.js";
+import RolesRoutes from "./routes/RolesRoute.js";
 import PatientRoutes from "./routes/PatientRoute.js";
 import AuthRoutes from "./routes/authRoutes.js";
 import TreatmentRoutes from "./routes/TreatmentRoutes.js";
+import UsersRoutes from "./routes/UserRoute.js";
 import http from 'http'
 import { Server } from 'socket.io';
 dotenv.config();
@@ -114,6 +115,8 @@ app.use("/api/admin",RolesRoutes);
 app.use("/api/patients",PatientRoutes);
 app.use('/api/auth', AuthRoutes);
 app.use('/api/treatments', TreatmentRoutes);
+app.use('/api/users', UsersRoutes);
+// app.use('/api/roles', RolesRoutes);
 // In your main server file
 app.set("io", io);
 

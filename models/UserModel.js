@@ -12,6 +12,10 @@ const userSchema = new mongoose.Schema({
     of: [String], // Module-wise permissions like role
     default: {}
   }
+  , status: {
+      type: Boolean,
+      default: true // active by default
+    }
 }, { timestamps: true });
 
 export default mongoose.model("User", userSchema);
