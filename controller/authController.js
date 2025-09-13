@@ -1,4 +1,3 @@
-import Role from '../models/Role.js';
 
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
@@ -12,8 +11,12 @@ export const register = async (req, res) => {
   const userExists = await UserModel.findOne({ email });
   if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-  const hashedPassword = await bcrypt.hash(password, 10);
-
+  // const hashedPassword = await bcrypt.hash(password, 10);
+  console.log('name ',name)
+  console.log('email ',email)
+  console.log('password ',password)
+  console.log('role ',role)
+const hashedPassword = await bcrypt.hash(password, 10);
 
 
 
