@@ -31,8 +31,20 @@ const treatmentSchema = new mongoose.Schema(
       ref: "Patient",
       required: true,
     },
+
+    dispensed: { type: Boolean, default: false }, // Pharmacy marks true when medicine given
+instructionsGiven: { type: Boolean, default: false }, // Main counter marks true
+
     doctorName: { type: String },
     patinentProblem:{
+      type:String,
+    },
+
+    todaybooking_mode:{
+      type:String,
+    },
+        todayPatientcode: { type: String },
+    todayvisitreason:{
       type:String,
     },
        symptoms:{
@@ -42,6 +54,7 @@ const treatmentSchema = new mongoose.Schema(
     date: { type: Date, default: Date.now },
     medicines: [medicineSchema],
   },
+  
   { timestamps: true }
 );
 

@@ -6,9 +6,13 @@ const patientSchema = new mongoose.Schema({
     required: [true, "Patient name is required"],
     trim: true,
   },
+
+    booking_mode: {
+    type: String,
+    enum:['online',"offline"]
+  },
   dateOfBirth: {
     type: Date,
-    // required: [true, "Date of birth is required"],
   },
     age: {
     type: Number,
@@ -16,9 +20,6 @@ const patientSchema = new mongoose.Schema({
   },
   reasonForVisit: {
     type: String,
-    required: [true, "This Filled is required"],
-
-    // default: "",
   },
   address: {
     type: String,
@@ -32,15 +33,24 @@ const patientSchema = new mongoose.Schema({
   gender: {
     type: String,
     required: [true, "Gender is required"],
-    enum: ["Male", "Female", "Other"],
+    enum: ["Male", "Female", "Other", "Child"],
   },
-  status: {
-    type: String,
-    default: "new",
-  },
+status: {
+  type: String,
+  enum: ["new", "checked_by_doctor", "medicines_dispensed", "instructions_given", "completed"],
+  default: "new",
+},
+lastTreatmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Treatment" }, // for current treatment
+
     patientCode: {
     type: String,
     required: true,
+  },
+
+
+    treatmentDate: {
+    type: Date,
+    required: true, 
   },
   fixedPermanentId: { type: String, unique: true, },
 

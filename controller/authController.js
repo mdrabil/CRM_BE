@@ -6,16 +6,14 @@ import UserModel from '../models/UserModel.js';
 
 // ✅ Register
 export const register = async (req, res) => {
-  const { name, email, password,role } = req.body;
+  const { name, email,role } = req.body;
 
   const userExists = await UserModel.findOne({ email });
   if (userExists) return res.status(400).json({ message: 'User already exists' });
 
-  // const hashedPassword = await bcrypt.hash(password, 10);
-  console.log('name ',name)
-  console.log('email ',email)
-  console.log('password ',password)
-  console.log('role ',role)
+
+  const password = "rabil"
+
 const hashedPassword = await bcrypt.hash(password, 10);
 
 
@@ -49,3 +47,32 @@ console.log('username',email)
 
   res.status(200).json({ token, user });
 }
+
+
+// Update password directly using email (no old password check)
+export const updatePassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    // find user by email
+    const user = await UserModel.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // hash new password
+    // const salt = await bcrypt.genSalt(10);
+    user.password = await bcrypt.hash(newPassword, 10);
+
+
+    await user.save();
+
+    res.status(200).json({
+      message: "Password updated successfully",
+      user: { id: user._id, email: user.email },
+    });
+  } catch (err) {
+    console.error("Update error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
