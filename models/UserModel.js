@@ -9,12 +9,12 @@ const userSchema = new mongoose.Schema({
   },
   customPermissions: {
     type: Map,
-    of: [String], // Module-wise permissions like role
+    of: [String], 
     default: {}
   }
   , status: {
       type: Boolean,
-      default: true // active by default
+      default: true 
     }
 }, { timestamps: true });
 

@@ -36,11 +36,11 @@ const hashedPassword = await bcrypt.hash(password, 10);
 // ✅ Login
 export const login = async (req, res) => {
   const { email, password } = req.body;
-console.log('username',email)
+
   const user = await UserModel.findOne({ email }).populate('role');
   if (!user) return res.status(404).json({ message: 'User not found' });
 
-  const isMatch = await bcrypt.compare(password, user.password);
+  const isMatch =  bcrypt.compareSync(password, user.password);
   if (!isMatch) return res.status(401).json({ message: 'Invalid credentials' });
 
   const token = jwt.sign({ id: user._id,role:user?.role }, process.env.SECRET_KEY, { expiresIn: '7d' });
@@ -55,6 +55,7 @@ export const updatePassword = async (req, res) => {
     const { email, newPassword } = req.body;
 
     // find user by email
+    console.log('email',email)
     const user = await UserModel.findOne({ email });
     if (!user) {
       return res.status(404).json({ message: "User not found" });

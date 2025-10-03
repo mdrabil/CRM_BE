@@ -8,9 +8,9 @@ import UserModel from "../models/UserModel.js";
 
 // POST /api/roles
 export const createRole = async (req, res) => {
-    console.log('rabil')
+   
   try {
-    const { name, permissions } = req.body;
+    const { name, permissions ,status } = req.body;
 
     // check if role already exists
     const existing = await Role.findOne({ name });
@@ -18,7 +18,7 @@ export const createRole = async (req, res) => {
       return res.status(400).json({ message: "Role already exists" });
     }
 
-    const newRole = new Role({ name, permissions });
+    const newRole = new Role({ name, permissions,status:status });
     await newRole.save();
 
     res.status(201).json({ message: "Role created", role: newRole });

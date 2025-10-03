@@ -32,19 +32,20 @@ const treatmentSchema = new mongoose.Schema(
       required: true,
     },
 
-    dispensed: { type: Boolean, default: false }, // Pharmacy marks true when medicine given
-instructionsGiven: { type: Boolean, default: false }, // Main counter marks true
+    dispensed: { type: Boolean, default: false }, 
+instructionsGiven: { type: Boolean, default: false }, 
 
     doctorName: { type: String },
     patinentProblem:{
       type:String,
     },
-
+    // restrictions: [{ type: String }], 
+    restrictions: { type: String }, 
     todaybooking_mode:{
       type:String,
     },
-        todayPatientcode: { type: String },
-    todayvisitreason:{
+        Patientcode: { type: String },
+    visitreason:{
       type:String,
     },
        symptoms:{
@@ -52,6 +53,11 @@ instructionsGiven: { type: Boolean, default: false }, // Main counter marks true
       
     },
     date: { type: Date, default: Date.now },
+    status: {
+  type: String,
+  enum: ["Pending", "checking_start", "checked_by_doctor", "medicines_dispensed", "completed"],
+  default: "Pending",
+},
     medicines: [medicineSchema],
   },
   

@@ -37,7 +37,7 @@ const patientSchema = new mongoose.Schema({
   },
 status: {
   type: String,
-  enum: ["new", "checked_by_doctor", "medicines_dispensed", "instructions_given", "completed"],
+  enum: ["new", "checking_start", "checked_by_doctor", "medicines_dispensed", "completed"],
   default: "new",
 },
 lastTreatmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Treatment" }, // for current treatment

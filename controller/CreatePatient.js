@@ -1,107 +1,8 @@
 import PatientModel from "../models/PatientData.js";
-
-
-// done wala hai 
-// const generatePatientCodeToday = async () => {
-//   const today = moment().startOf("day");
-//   const tomorrow = moment(today).add(1, "days");
-
-//   const count = await PatientModel.countDocuments({
-//     createdAt: {
-//       $gte: today.toDate(),
-//       $lt: tomorrow.toDate(),
-//     },
-//   });
-
-//   return (count + 1).toString().padStart(3, "0"); // '001', '002', etc.
-// };
-
-// // Helper: Get next permanent fixed ID
-// const generateNextFixedPermanentId = async () => {
-//   const lastPatient = await PatientModel.findOne().sort({ createdAt: -1 });
-//   let lastId = lastPatient?.fixedPermanentId?.split("-")[1] || "0000";
-//   let nextId = (parseInt(lastId) + 1).toString().padStart(4, "0");
-//   return `PNo-${nextId}`;
-// };
-
-// export const createPatient = async (req, res) => {
-
-//     const io = req.app.get("io"); // ✅ working
-//   const {
-//     patientName,
-//     dateOfBirth,
-//     age,
-//     reasonForVisit,
-//     address,
-//     phone,
-//     gender,
-//     status,
-//     treatmentDate,
-//   } = req.body;
-
-
-//   try {
-//     const existing = await PatientModel.findOne({ patientName, phone });
-// const visitDate = treatmentDate ? moment(treatmentDate).startOf("day") : moment().startOf("day");
-//     const today = moment().startOf("day");
-//     const tomorrow = moment(today).add(1, "days");
-
-//     // ⏺ Existing patient
-//     if (existing) {
-//       // Check if already has today's patientCode
-//       const createdDate = moment(existing.createdAt);
-//       const isToday =
-//         createdDate.isSameOrAfter(today) && createdDate.isBefore(tomorrow);
-
-//       if (!isToday) {
-//         const newCode = await generatePatientCodeToday();
-//         existing.patientCode = newCode;
-//       }
-
-//       existing.reasonForVisit = reasonForVisit;
-
-//       await existing.save();
-
-//       return res.status(200).json({
-//         message: "Existing patient updated with new visit reason",
-//         patient: existing,
-//       });
-//     }
-
-//     // ⏺ New patient
-//     const patientCode = await generatePatientCodeToday();
-//     const fixedPermanentId = await generateNextFixedPermanentId();
-
-//     const patient = new PatientModel({
-//       patientName,
-//       dateOfBirth,
-//       age,
-//       reasonForVisit,
-//       address,
-//       phone,
-//       gender,
-//       status,
-//       patientCode,
-//       fixedPermanentId,
-//       treatmentDate: visitDate.toDate(),
-//     });
-
-//     await patient.save();
-// io.emit("new_patient_added", patient);
-//     res.status(201).json({ message: "Patient created", patient });
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
+import Treatment from "../models/Treatment.js";
 
 
 
-// READ ALL
-
-
-
-
-// ✅ Permanent ID generator
 const generateNextFixedPermanentId = async () => {
   const lastPatient = await PatientModel.findOne().sort({ createdAt: -1 });
   let lastId = lastPatient?.fixedPermanentId?.split("-")[1] || "0000";
@@ -109,91 +10,6 @@ const generateNextFixedPermanentId = async () => {
   return `PNo-${nextId}`;
 };
 
-
-// const generateBookingIdByDate = async (treatmentDate) => {
-//   const startOfDay = new Date(treatmentDate);
-//   startOfDay.setHours(0, 0, 0, 0);
-
-//   const endOfDay = new Date(startOfDay);
-//   endOfDay.setDate(endOfDay.getDate() + 1);
-
-//   const count = await PatientModel.countDocuments({
-//     treatmentDate: { $gte: startOfDay, $lt: endOfDay },
-//   });
-
-//   return `${String(count + 1).padStart(3, "0")}`;
-// };
-
-// // ✅ Create or Update Patient
-// export const createPatient = async (req, res) => {
-//   const io = req.app.get("io");
-
-//   const {
-//     patientName,
-//     dateOfBirth,
-//     age,
-//     reasonForVisit,
-//     address,
-//     phone,
-//     gender,
-//     status,
-//     treatmentDate,
-//   } = req.body;
-
-//   try {
-//     // ⏺ Agar frontend se date nahi aayi → default today
-//     const visitDate = treatmentDate ? new Date(treatmentDate) : new Date();
-//     visitDate.setHours(0, 0, 0, 0); // Reset time to start of day
-
-//     // ⏺ Check existing patient (same phone & same treatmentDate)
-//     const existing = await PatientModel.findOne({
-//       patientName,
-//       phone,
-//     });
-//     const patientCode = await generateBookingIdByDate(visitDate);
-
-//     if (existing) {
-//       // Update reason & date
-//       existing.reasonForVisit = reasonForVisit;
-//       existing.treatmentDate = visitDate;
-//       existing.patientCode = patientCode;
-//       await existing.save();
-
-//       return res.status(200).json({
-//         message: "Existing patient updated with new visit reason",
-//         patient: existing,
-//       });
-//     }
-
-//     // ⏺ New patient entry
-//     const fixedPermanentId = await generateNextFixedPermanentId();
-
-//     const patient = new PatientModel({
-//       patientName,
-//       dateOfBirth,
-//       age,
-//       reasonForVisit,
-//       address,
-//       phone,
-//       gender,
-//       status,
-//       patientCode,
-//       fixedPermanentId,
-//       treatmentDate: visitDate, // ✅ Save booking date
-//     });
-
-//     await patient.save();
-//     io.emit("new_patient_added", patient);
-
-//     res.status(201).json({ message: "Patient created", patient });
-//   } catch (error) {
-//     res.status(400).json({ message: error.message });
-//   }
-// };
-
-
-
-// Helper: Local start of day
 const getLocalStartOfDay = (date) => {
   const d = new Date(date);
   d.setHours(0, 0, 0, 0); // 12:00 AM local time
@@ -262,6 +78,7 @@ export const createPatient = async (req, res) => {
       existing.treatmentDate = localVisitDate;
       existing.patientCode = patientCode;
       existing.booking_mode = booking_mode;
+      existing.status = "new";
 
       await existing.save();
   io.emit("new_patient_added", existing);
@@ -271,8 +88,9 @@ export const createPatient = async (req, res) => {
       });
     }
 
-    // New patient entry
-    const patient = new PatientModel({
+
+
+     const patient = new PatientModel({
       patientName,
       dateOfBirth,
       age,
@@ -280,13 +98,12 @@ export const createPatient = async (req, res) => {
       address,
       phone,
       gender,
-      status,
+      status: "new",
       patientCode,
       fixedPermanentId,
-      booking_mode:booking_mode ? booking_mode :'offline',
-      treatmentDate: localVisitDate, // ✅ Save visitDate as local start of day
+      booking_mode: booking_mode || 'offline',
+      treatmentDate: localVisitDate,
     });
-
     await patient.save();
     io.emit("new_patient_added", patient);
 
@@ -307,35 +124,6 @@ export const getAllPatients = async (req, res) => {
   }
 };
 
-
-
-// controllers/patientController.js
-export const searchQueryPatient = async (req, res) => {
-  const { name, phone, patientCode } = req.query;
-
-  const query = {};
-
-  if (name) {
-    query.patientName = { $regex: name, $options: "i" };
-  }
-
-  if (phone) {
-    query.phone = { $regex: phone }; // partial match
-  }
-
-  if (patientCode) {
-    query.patientCode = patientCode;
-  }
-
-  try {
-    const patients = await PatientModel.find(query).sort({ createdAt: -1 });
-    res.status(200).json(patients);
-  } catch (error) {
-    res.status(500).json({ message: "Failed to fetch patients", error });
-  }
-};
-
-
 // export const getTodaysPatients = async (req, res) => {
 //   try {
 //     const startOfDay = new Date();
@@ -344,9 +132,10 @@ export const searchQueryPatient = async (req, res) => {
 //     const endOfDay = new Date();
 //     endOfDay.setHours(23, 59, 59, 999);
 
+//     // ✅ Filter by treatmentDate instead of createdAt
 //     const patients = await PatientModel.find({
-//       createdAt: { $gte: startOfDay, $lte: endOfDay }
-//     }).sort({ createdAt: -1 });
+//       treatmentDate: { $gte: startOfDay, $lte: endOfDay }
+//     }).sort({ treatmentDate: -1 });
 
 //     res.json(patients);
 //   } catch (error) {
@@ -354,10 +143,6 @@ export const searchQueryPatient = async (req, res) => {
 //     res.status(500).json({ message: "Server error" });
 //   }
 // };
-
-
-// READ ONE
-
 
 export const getTodaysPatients = async (req, res) => {
   try {
@@ -367,10 +152,33 @@ export const getTodaysPatients = async (req, res) => {
     const endOfDay = new Date();
     endOfDay.setHours(23, 59, 59, 999);
 
-    // ✅ Filter by treatmentDate instead of createdAt
     const patients = await PatientModel.find({
       treatmentDate: { $gte: startOfDay, $lte: endOfDay }
-    }).sort({ treatmentDate: -1 });
+    }).lean(); // lean() optional, faster queries
+
+    // Custom status order
+    const statusOrder = [
+      "checking_start",
+      "new",
+      "checked_by_doctor",
+      "medicines_dispensed",
+      "instructions_given",
+      "completed"
+    ];
+
+    // Sort patients
+    patients.sort((a, b) => {
+      const statusA = statusOrder.indexOf(a.status);
+      const statusB = statusOrder.indexOf(b.status);
+
+      if (statusA !== statusB) return statusA - statusB;
+
+      // Agar status same hai aur "new" hai, to recently added top
+      if (a.status === "new") return new Date(b.createdAt) - new Date(a.createdAt);
+
+      // Otherwise same order
+      return 0;
+    });
 
     res.json(patients);
   } catch (error) {
@@ -378,7 +186,6 @@ export const getTodaysPatients = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-
 
 
 export const getPatient = async (req, res) => {
@@ -415,3 +222,261 @@ export const deletePatient = async (req, res) => {
     res.status(400).json({ message: "Invalid patient ID" });
   }
 };
+
+
+
+// GET /api/patients?status=new
+export const getPatientsByStatus = async (req, res) => {
+  try {
+    const { status, date } = req.query;
+    const filter = {};
+
+    console.log('heere data kya hai ',status)
+
+
+    if (status) filter.status = status;
+    if (date) {
+      filter.treatmentDate = {
+        $gte: getLocalStartOfDay(date),
+        $lte: getLocalEndOfDay(date)
+      };
+    }
+
+    const patients = await PatientModel.find(filter).sort({ treatmentDate: 1 });
+    res.status(200).json(patients);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+// PATCH /api/patients/:id/status
+export const updatePatientStatus = async (req, res) => {
+  const io = req.app.get("io");
+  try {
+    const { id } = req.params;
+    const { status }= req.body;
+    console.log('hit api or not',status)
+
+    const patient = await PatientModel.findById(id);
+    if (!patient) return res.status(404).json({ message: "Patient not found" });
+
+    patient.status = status;
+    await patient.save();
+
+    io.emit("patient_status_updated", patient);
+    res.status(200).json({ message: "Status updated", patient });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+
+
+
+// POST /api/treatments
+export const addTreatment = async (req, res) => {
+  const io = req.app.get("io");
+
+   try {
+    const {  patientId, patientmedicine ,patinentProblem,symptoms  } = req.body;
+
+    // Validate required fields
+    if (!patientId) {
+      return res.status(400).json({ message: "Patient name and ID are required" });
+    }
+
+    // Optionally check if patient exists in Patient model (if available)
+    const existingPatient = await PatientModel.findById(patientId);
+    if (!existingPatient) {
+      return res.status(404).json({ message: "Patient not found" });
+    }
+
+
+    // Convert patientmedicine to medicines as per schema
+    const medicines = patientmedicine.map((med) => ({
+      name: med.name,
+      quantity: 1, // Or dynamic if needed
+      dosageMl: med.dose ? parseFloat(med.dose) : undefined,
+      type: med.name.toLowerCase().includes("syrup") ? "Syrup" : "Tablet", // Just example logic
+      times: med.frequency,
+    }));
+    
+    // Create new treatment
+    const newTreatment = new Treatment({
+         todaybooking_mode:existingPatient?.booking_mode,
+      todayPatientcode:existingPatient?.patientCode,
+      todayvisitreason:existingPatient?.reasonForVisit,
+      patientId,
+      medicines,
+      doctorName: "Dr. HAKIM", 
+      patinentProblem,
+      symptoms
+    });
+
+
+    console.log('success')
+    await newTreatment.save();
+    console.log('success 1')
+
+      existingPatient.status = "checked_by_doctor";
+    existingPatient.lastTreatmentId = newTreatment._id;
+    await existingPatient.save();
+
+    io.emit("treatment_added", { existingPatient, newTreatment });
+    res.status(201).json({ message: "Treatment added", newTreatment });
+  
+
+    await existingPatient.save();
+    console.log('success3')
+
+    res.status(201).json({ message: "Treatment created successfully", newTreatment });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating treatment", error: error.message });
+  }
+
+}
+
+
+
+
+
+
+
+// GET /api/treatments?patientId=xxx
+export const getTreatments = async (req, res) => {
+  try {
+    const { patientId } = req.query;
+    const filter = {};
+    if (patientId) filter.patientId = patientId;
+
+    const treatments = await Treatment.find(filter).populate("patientId");
+    res.status(200).json(treatments);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+
+
+
+export const getTodayTreatments = async (req, res) => {
+  try {
+    const { patientId } = req.query;
+
+    // Aaj ka start aur end time
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+
+    const endOfToday = new Date();
+    endOfToday.setHours(23, 59, 59, 999);
+
+    // Filter bana lo
+    const filter = {
+      createdAt: { $gte: startOfToday, $lte: endOfToday },
+    };
+
+    if (patientId) filter.patientId = patientId;
+
+    const treatments = await Treatment.find(filter).populate("patientId");
+
+    res.status(200).json(treatments);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+
+
+
+// GET /api/patients?status=new&date=2025-09-30
+// export const getPatientsByStatus = async (req, res) => {
+//   try {
+//     const { status, date } = req.query;
+//     const filter = {};
+
+//     if (status) filter.status = status;
+
+//     if (date) {
+//       filter.treatmentDate = {
+//         $gte: getLocalStartOfDay(date),
+//         $lte: getLocalEndOfDay(date)
+//       };
+//     }
+
+//     const patients = await PatientModel.find(filter).sort({ treatmentDate: 1 });
+//     res.status(200).json(patients);
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
+
+
+// PATCH /api/treatments/:id/dispense
+export const dispenseMedicines = async (req, res) => {
+  const io = req.app.get("io");
+  try {
+    const { id } = req.params;
+
+    const treatment = await Treatment.findById(id);
+    if (!treatment) return res.status(404).json({ message: "Treatment not found" });
+
+    treatment.dispensed = true;
+    await treatment.save();
+
+    const patient = await PatientModel.findById(treatment.patientId);
+    patient.status = "medicines_dispensed";
+    await patient.save();
+
+    io.emit("medicines_dispensed", { patient, treatment });
+    res.status(200).json({ message: "Medicines dispensed", treatment });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+
+
+// PATCH /api/treatments/:id/instructions
+export const giveInstructions = async (req, res) => {
+  const io = req.app.get("io");
+  try {
+    const { id } = req.params;
+
+    const treatment = await Treatment.findById(id);
+    if (!treatment) return res.status(404).json({ message: "Treatment not found" });
+
+    treatment.instructionsGiven = true;
+    await treatment.save();
+
+    const patient = await PatientModel.findById(treatment.patientId);
+    patient.status = "completed";
+    await patient.save();
+
+    io.emit("instructions_given", { patient, treatment });
+    res.status(200).json({ message: "Instructions given", treatment });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+
+
+// GET /api/patients/completed?date=yyyy-mm-dd
+export const getCompletedPatients = async (req, res) => {
+  try {
+    const { date } = req.query;
+
+    const filter = { status: "instructions_given" };
+    if (date) {
+      filter.treatmentDate = {
+        $gte: getLocalStartOfDay(date),
+        $lte: getLocalEndOfDay(date)
+      };
+    }
+
+    const patients = await PatientModel.find(filter).sort({ treatmentDate: -1 });
+    res.status(200).json(patients);
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+};
+

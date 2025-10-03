@@ -60,7 +60,10 @@ export const getUserById = async (req, res) => {
 // UPDATE USER
 export const updateUser = async (req, res) => {
   try {
-    const { name, email, password, role } = req.body;
+    const { name, email, password, role ,status} = req.body;
+
+
+    // console.log('data ',status)
     const user = await UserModel.findById(req.params.id);
 
     if (!user) return res.status(404).json({ message: 'User not found' });
@@ -68,6 +71,10 @@ export const updateUser = async (req, res) => {
     if (name) user.name = name;
     if (email) user.email = email;
     if (role) user.role = role;
+    // ✅ This way false will also update
+    if (typeof status !== "undefined") {
+      user.status = status;
+    }
     if (password) user.password = await bcrypt.hash(password, 10);
 
     await user.save();
