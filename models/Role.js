@@ -9,8 +9,11 @@ const roleSchema = new mongoose.Schema({
 
   status:{
     type:Boolean,default:true
-  }
-
+  },
+  urls: {
+    type: [String], 
+    default: []
+  },
 
 }, {
   timestamps: true // ⏰ Adds createdAt and updatedAt fields

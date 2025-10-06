@@ -37,20 +37,12 @@ const patientSchema = new mongoose.Schema({
   },
 status: {
   type: String,
-  enum: ["new", "checking_start", "checked_by_doctor", "medicines_dispensed", "completed"],
+  enum: ["new", "old","inactive"],
   default: "new",
 },
-lastTreatmentId: { type: mongoose.Schema.Types.ObjectId, ref: "Treatment" }, // for current treatment
-
-    patientCode: {
-    type: String,
-    required: true,
-  },
-
-
     treatmentDate: {
     type: Date,
-    required: true, 
+    required: true,
   },
   fixedPermanentId: { type: String, unique: true, },
 

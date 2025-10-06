@@ -10,8 +10,8 @@ import {
   updatePatientStatus,
   getCompletedPatients,
   addTreatment,
-  getTreatments,
-  dispenseMedicines,
+  // getTreatments,
+  // dispenseMedicines,
   giveInstructions
 } from "../controller/CreatePatient.js";
 
@@ -49,10 +49,10 @@ router.delete("/:id", deletePatient);
 router.post("/treatments", addTreatment);
 
 // Get treatments (optionally by patientId)
-router.get("/treatments", getTreatments);
+// router.get("/treatments", getTreatments);
 
 // Mark medicines as dispensed
-router.patch("/treatments/:id/dispense", dispenseMedicines);
+// router.patch("/treatments/:id/dispense", dispenseMedicines);
 
 // Mark instructions as given
 router.patch("/treatments/:id/instructions", giveInstructions);

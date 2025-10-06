@@ -16,20 +16,29 @@
 import express from "express";
 import {
   addTreatment,
-  getTreatments,
-  dispenseMedicines,
-  giveInstructions,
+
   getTodayTreatments,
+
 } from "../controller/CreatePatient.js";
 import { authMiddleware } from "../middleware/auth.js";
+import { dispenseMedicines, FinalMedicineUpdate, getTreatmentById, getTreatmentByStatus, getTreatments, getTreatmentsFilter, updateTreatment, updateTreatmentAgain } from "../controller/TreatmentControll.js";
 
 const router = express.Router();
 
 // Treatments Routes
+router.get("/today",authMiddleware, getTodayTreatments);                        // Get all or by patientId
 router.post("/", addTreatment);                        // Add treatment
 router.get("/", getTreatments);                        // Get all or by patientId
-router.get("/today",authMiddleware, getTodayTreatments);                        // Get all or by patientId
-router.patch("/:id/dispense", dispenseMedicines);      // Dispense medicines
-router.patch("/:id/instructions", giveInstructions);   // Give instructions
+router.get("/filter", getTreatmentsFilter);                        // Get all or by patientId
+router.get("/:id", getTreatmentById);   
+router.put("/:id", updateTreatmentAgain);   
+                     // Get all or by patientId
+// router.patch("/:id/dispense", dispenseMedicines);    
+router.put("/:id/dispense", dispenseMedicines);    
+router.patch("/:id/status", updateTreatment);    
+router.get("/status/:status", getTreatmentByStatus);    
+// router.patch("/:id/instructions", giveInstructions);   
+router.put("/:id/instructions", FinalMedicineUpdate);   
+
 
 export default router;

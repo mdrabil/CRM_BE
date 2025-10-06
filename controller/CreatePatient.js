@@ -28,7 +28,7 @@ const generateBookingIdByDate = async (visitDate) => {
   const startOfDay = getLocalStartOfDay(visitDate);
   const endOfDay = getLocalEndOfDay(visitDate);
 
-  const count = await PatientModel.countDocuments({
+  const count = await Treatment?.countDocuments({
     treatmentDate: { $gte: startOfDay, $lte: endOfDay },
   });
 
@@ -41,6 +41,7 @@ const generateBookingIdByDate = async (visitDate) => {
 };
 
 // ✅ Create or Update Patient
+// ✅ Create or Update Patient + First Treatment
 export const createPatient = async (req, res) => {
   const io = req.app.get("io");
 
@@ -52,66 +53,83 @@ export const createPatient = async (req, res) => {
     address,
     phone,
     gender,
-    status,
     treatmentDate,
     booking_mode
   } = req.body;
 
   try {
-    // Agar frontend date nahi aayi → default today
+    // Default today
     const visitDate = treatmentDate ? new Date(treatmentDate) : new Date();
-    
-    const localVisitDate = getLocalStartOfDay(visitDate); // ✅ Local 12 AM
+    const localVisitDate = getLocalStartOfDay(visitDate);
 
-    // Generate patient code for this date
-    const patientCode = await generateBookingIdByDate(localVisitDate);
-    const fixedPermanentId = await generateNextFixedPermanentId();
 
-    // Check existing patient (same phone & same date)
-    const existing = await PatientModel.findOne({
-      patientName,
-      phone,
+
+    console.log('treatmnet data',treatmentDate)
+    // Generate patient code + permanent ID
+
+       const existingTreatment = await Treatment.findOne({
+      patientId: await PatientModel.findOne({ patientName, phone }).select("_id"),
+      treatmentDate: { $gte: localVisitDate, $lte: getLocalEndOfDay(localVisitDate) }
     });
 
-    if (existing) {
-      existing.reasonForVisit = reasonForVisit;
-      existing.treatmentDate = localVisitDate;
-      existing.patientCode = patientCode;
-      existing.booking_mode = booking_mode;
-      existing.status = "new";
-
-      await existing.save();
-  io.emit("new_patient_added", existing);
-      return res.status(200).json({
-        message: "Existing patient updated with new visit reason",
-        patient: existing,
-      });
+    if (existingTreatment) {
+      return res.status(400).json({ message: "Patient already has an appointment today!" });
     }
 
 
 
-     const patient = new PatientModel({
-      patientName,
-      dateOfBirth,
-      age,
-      reasonForVisit,
-      address,
-      phone,
-      gender,
-      status: "new",
-      patientCode,
-      fixedPermanentId,
-      booking_mode: booking_mode || 'offline',
+    const patientCode = await generateBookingIdByDate(localVisitDate);
+    const fixedPermanentId = await generateNextFixedPermanentId();
+
+    // Check existing patient
+    let patient = await PatientModel.findOne({ patientName, phone });
+
+    if (!patient) {
+      // 🔹 New patient create
+      patient = new PatientModel({
+        patientName,
+        dateOfBirth,
+        age,
+        reasonForVisit,
+        address,
+        phone,
+        gender,
+        status: "new",
+        fixedPermanentId,
+        booking_mode: booking_mode || "offline",
+        treatmentDate: localVisitDate,
+      });
+      await patient.save();
+    } else {
+ 
+      patient.status = "old";
+      await patient.save();
+    }
+
+    // 🔹 Create treatment immediately
+    const treatment = new Treatment({
+      patientCode:patientCode,
+      patientId: patient._id,
+      booking_mode: patient.booking_mode,
+      Patienpatientcodetcode: patient.patientCode,
+      visitreason: patient.reasonForVisit,
+      status: "pending", 
       treatmentDate: localVisitDate,
     });
-    await patient.save();
-    io.emit("new_patient_added", patient);
 
-    res.status(201).json({ message: "Patient created", patient });
+    await treatment.save();
+
+    io.emit("new_patient_added", patient);
+    res.status(201).json({
+      message: "Patient & Treatment created successfully",
+      patient,
+      treatment,
+    });
   } catch (error) {
     res.status(400).json({ message: error.message });
   }
 };
+
 
 
 
@@ -343,26 +361,10 @@ export const addTreatment = async (req, res) => {
 
 
 // GET /api/treatments?patientId=xxx
-export const getTreatments = async (req, res) => {
-  try {
-    const { patientId } = req.query;
-    const filter = {};
-    if (patientId) filter.patientId = patientId;
-
-    const treatments = await Treatment.find(filter).populate("patientId");
-    res.status(200).json(treatments);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
-
 
 
 export const getTodayTreatments = async (req, res) => {
   try {
-    const { patientId } = req.query;
-
     // Aaj ka start aur end time
     const startOfToday = new Date();
     startOfToday.setHours(0, 0, 0, 0);
@@ -372,10 +374,10 @@ export const getTodayTreatments = async (req, res) => {
 
     // Filter bana lo
     const filter = {
-      createdAt: { $gte: startOfToday, $lte: endOfToday },
+      treatmentDate: { $gte: startOfToday, $lte: endOfToday },
     };
 
-    if (patientId) filter.patientId = patientId;
+   
 
     const treatments = await Treatment.find(filter).populate("patientId");
 
@@ -411,29 +413,24 @@ export const getTodayTreatments = async (req, res) => {
 // };
 
 
-// PATCH /api/treatments/:id/dispense
-export const dispenseMedicines = async (req, res) => {
-  const io = req.app.get("io");
-  try {
-    const { id } = req.params;
 
-    const treatment = await Treatment.findById(id);
-    if (!treatment) return res.status(404).json({ message: "Treatment not found" });
+// export const updateTreatment = async (req, res) => {
+//   const io = req.app.get("io");
+//   try {
+//     const { id } = req.params;
+// const {status} = req.body
+//     const treatment = await Treatment.findById(id);
+//     if (!treatment) return res.status(404).json({ message: "Treatment not found" });
 
-    treatment.dispensed = true;
-    await treatment.save();
+//     treatment.status = status;
+//     await treatment.save();
 
-    const patient = await PatientModel.findById(treatment.patientId);
-    patient.status = "medicines_dispensed";
-    await patient.save();
-
-    io.emit("medicines_dispensed", { patient, treatment });
-    res.status(200).json({ message: "Medicines dispensed", treatment });
-  } catch (error) {
-    res.status(400).json({ message: error.message });
-  }
-};
-
+//     io.emit("medicines_dispensed", {  treatment });
+//     res.status(200).json({ message: "Medicines dispensed", treatment });
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
 
 
 // PATCH /api/treatments/:id/instructions

@@ -18,6 +18,8 @@ const medicineSchema = new mongoose.Schema(
     { type: Number, required: true 
 
     },
+            totalMediUsage: 
+    { type: Number, required: true },
     mfgDate:
      { type: Date,
          required: true
