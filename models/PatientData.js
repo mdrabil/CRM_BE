@@ -40,10 +40,7 @@ status: {
   enum: ["new", "old","inactive"],
   default: "new",
 },
-    treatmentDate: {
-    type: Date,
-    required: true,
-  },
+
   fixedPermanentId: { type: String, unique: true, },
 
 }, {

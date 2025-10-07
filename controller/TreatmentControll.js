@@ -96,7 +96,9 @@ export const getTreatments = async (req, res) => {
     const filter = {};
     if (patientId) filter.patientId = patientId;
 
-    const treatments = await Treatment.find(filter).populate("patientId");
+    // const treatments = await Treatment.find(filter).populate("patientId");
+        const treatments = await Treatment.find({ status: "completed" }).populate("patientId");
+
     res.status(200).json(treatments);
   } catch (error) {
     res.status(400).json({ message: error.message });
@@ -537,4 +539,162 @@ export const FinalMedicineUpdate = async (req, res) => {
     });
   }
 };
+
+
+
+
+
+// export const getBookingReport = async (req, res) => {
+//   try {
+//     let { startDate, endDate, status } = req.query;
+
+//     const today = new Date();
+
+//     // Agar startDate na diya ho → default last month se
+//     if (!startDate) {
+//       const oneMonthAgo = new Date();
+//       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+//       startDate = oneMonthAgo.toISOString().split("T")[0]; // YYYY-MM-DD
+//     }
+
+//     // Agar endDate na diya ho → default today
+//     if (!endDate) {
+//       endDate = today.toISOString().split("T")[0]; // YYYY-MM-DD
+//     }
+
+//     // UTC me convert karke date range set karo
+//     const start = new Date(startDate + "T00:00:00.000Z");
+//     const end = new Date(endDate + "T23:59:59.999Z");
+
+//     // Aggregation match
+//     const match = { treatmentDate: { $gte: start, $lte: end } };
+//     if (status) match.status = status;
+
+//     // Report aggregation
+//     const report = await Treatment.aggregate([
+//       { $match: match },
+//       {
+//         $group: {
+//           _id: { $dateToString: { format: "%Y-%m-%d", date: "$treatmentDate" } },
+//           totalBookings: { $sum: 1 },
+//           patients: { $push: "$patientId" }
+//         }
+//       },
+//       { $sort: { _id: 1 } }
+//     ]);
+
+//     res.status(200).json(report);
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
+// export const getBookingReport = async (req, res) => {
+//   try {
+//     let { startDate, endDate } = req.query;
+
+//     const today = new Date();
+
+//     // Default last 1 month
+//     if (!startDate) {
+//       const oneMonthAgo = new Date();
+//       oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+//       startDate = oneMonthAgo.toISOString().split("T")[0];
+//     }
+//     if (!endDate) {
+//       endDate = today.toISOString().split("T")[0];
+//     }
+
+//     const start = new Date(startDate + "T00:00:00.000Z");
+//     const end = new Date(endDate + "T23:59:59.999Z");
+
+//     // Sab treatments fetch karo
+//     const treatments = await Treatment.find({
+//       treatmentDate: { $gte: start, $lte: end },
+//     });
+
+//     // Date-wise count nikalna
+//     const countByDate = {};
+
+//     treatments.forEach(t => {
+//       const dateKey = t.treatmentDate.toISOString().split("T")[0]; // YYYY-MM-DD
+//       if (countByDate[dateKey]) {
+//         countByDate[dateKey] += 1;
+//       } else {
+//         countByDate[dateKey] = 1;
+//       }
+//     });
+
+
+//     // Object ko array me convert kar do sorted order me
+//     const report = Object.keys(countByDate)
+//       .sort()
+//       .map(date => ({
+//         date,
+//         totalBookings: countByDate[date],
+//       }));
+
+
+//       console.log('data',report)
+//     res.status(200).json(report);
+
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ message: "Server error" });
+//   }
+// };
+
+
+export const getBookingReport = async (req, res) => {
+  try {
+    // Frontend se query params
+    const { startDate, endDate, status } = req.query;
+
+
+    console.log('status find',status)
+    // Agar frontend se date nahi diya to today se next 1 month
+    let start = startDate ? new Date(startDate) : new Date();
+    start.setHours(0, 0, 0, 0); // start of day
+
+    let end = endDate
+      ? new Date(endDate)
+      : new Date(new Date().setMonth(new Date().getMonth() + 1));
+    end.setHours(23, 59, 59, 999); // end of day
+
+    // Build filter
+    const filter = {
+      treatmentDate: { $gte: start, $lte: end },
+    };
+    if (status) filter.status = status;
+
+    // Aggregation: group by date and count bookings
+    const report = await Treatment.aggregate([
+      { $match: filter },
+      {
+        $group: {
+          _id: {
+            $dateToString: { format: "%Y-%m-%d",
+               date: "$treatmentDate",
+                    timezone: "Asia/Kolkata" // ✅ important
+
+             },
+          },
+          totalBookings: { $sum: 1 },
+        },
+      },
+      { $sort: { _id: 1 } }, // ascending by date
+    ]);
+
+    res.status(200).json(report);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error generating report", error });
+  }
+};
+
+
+
 

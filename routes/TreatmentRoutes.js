@@ -21,7 +21,7 @@ import {
 
 } from "../controller/CreatePatient.js";
 import { authMiddleware } from "../middleware/auth.js";
-import { dispenseMedicines, FinalMedicineUpdate, getTreatmentById, getTreatmentByStatus, getTreatments, getTreatmentsFilter, updateTreatment, updateTreatmentAgain } from "../controller/TreatmentControll.js";
+import { dispenseMedicines, FinalMedicineUpdate, getBookingReport, getTreatmentById, getTreatmentByStatus, getTreatments, getTreatmentsFilter, updateTreatment, updateTreatmentAgain } from "../controller/TreatmentControll.js";
 
 const router = express.Router();
 
@@ -29,6 +29,7 @@ const router = express.Router();
 router.get("/today",authMiddleware, getTodayTreatments);                        // Get all or by patientId
 router.post("/", addTreatment);                        // Add treatment
 router.get("/", getTreatments);                        // Get all or by patientId
+router.get("/report", getBookingReport);   
 router.get("/filter", getTreatmentsFilter);                        // Get all or by patientId
 router.get("/:id", getTreatmentById);   
 router.put("/:id", updateTreatmentAgain);   

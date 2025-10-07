@@ -10,9 +10,17 @@ const generateNextFixedPermanentId = async () => {
   return `PNo-${nextId}`;
 };
 
+
+
 const getLocalStartOfDay = (date) => {
-  const d = new Date(date);
-  d.setHours(0, 0, 0, 0); // 12:00 AM local time
+  const d = new Date(date || new Date()); // agar date nahi, to current date
+  const now = new Date();
+
+  d.setHours(now.getHours());
+  d.setMinutes(now.getMinutes());
+  d.setSeconds(now.getSeconds());
+  d.setMilliseconds(now.getMilliseconds());
+
   return d;
 };
 
@@ -24,27 +32,159 @@ const getLocalEndOfDay = (date) => {
 };
 
 // Booking ID generator (date wise)
-const generateBookingIdByDate = async (visitDate) => {
-  const startOfDay = getLocalStartOfDay(visitDate);
-  const endOfDay = getLocalEndOfDay(visitDate);
+// const generateBookingIdByDate = async (visitDate) => {
+//   const startOfDay = getLocalStartOfDay(visitDate);
+//   const endOfDay = getLocalEndOfDay(visitDate);
 
-  const count = await Treatment?.countDocuments({
-    treatmentDate: { $gte: startOfDay, $lte: endOfDay },
-  });
+//   const count = await Treatment?.countDocuments({
+//     treatmentDate: { $gte: startOfDay, $lte: endOfDay },
+//   });
 
-  // Example: 20250927-001
-  const yyyy = startOfDay.getFullYear();
-  const mm = String(startOfDay.getMonth() + 1).padStart(2, "0");
-  const dd = String(startOfDay.getDate()).padStart(2, "0");
+//   // Example: 20250927-001
+//   const yyyy = startOfDay.getFullYear();
+//   const mm = String(startOfDay.getMonth() + 1).padStart(2, "0");
+//   const dd = String(startOfDay.getDate()).padStart(2, "0");
 
-  return `${String(count + 1).padStart(3, "0")}`;
-};
+//   return `${String(count + 1).padStart(3, "0")}`;
+// };
 
 // ✅ Create or Update Patient
 // ✅ Create or Update Patient + First Treatment
-export const createPatient = async (req, res) => {
-  const io = req.app.get("io");
+// export const createPatient = async (req, res) => {
+//   const io = req.app.get("io");
 
+//   const {
+//     patientName,
+//     dateOfBirth,
+//     age,
+//     reasonForVisit,
+//     address,
+//     phone,
+//     gender,
+//     treatmentDate,
+//     booking_mode
+//   } = req.body;
+
+//   try {
+//     // Default today
+//     const visitDate = treatmentDate ? new Date(treatmentDate) : new Date();
+//     const localVisitDate = getLocalStartOfDay(visitDate);
+
+
+
+
+//     // Generate patient code + permanent ID
+
+//        const existingTreatment = await Treatment.findOne({
+//       patientId: await PatientModel.findOne({ patientName, phone }).select("_id"),
+//       treatmentDate: { $gte: localVisitDate, $lte: getLocalEndOfDay(localVisitDate) }
+//     });
+
+//     if (existingTreatment) {
+//       return res.status(400).json({ message: "Patient already has an appointment today!" });
+//     }
+
+
+
+//     const patientCode = await generateBookingIdByDate(localVisitDate);
+//     const fixedPermanentId = await generateNextFixedPermanentId();
+
+//     // Check existing patient
+//     let patient = await PatientModel.findOne({ patientName, phone });
+
+//     if (!patient) {
+//       // 🔹 New patient create
+//       patient = new PatientModel({
+//         patientName,
+//         dateOfBirth,
+//         age,
+//         reasonForVisit,
+//         address,
+//         phone,
+//         gender,
+//         status: "new",
+//         fixedPermanentId,
+//         booking_mode: booking_mode || "offline",
+//         treatmentDate: localVisitDate,
+//       });
+//       await patient.save();
+//     } else {
+ 
+//       patient.status = "old";
+//       await patient.save();
+//     }
+
+//     // 🔹 Create treatment immediately
+//     const treatment = new Treatment({
+//       patientCode:patientCode,
+//       patientId: patient._id,
+//       booking_mode: patient.booking_mode,
+//       Patienpatientcodetcode: patient.patientCode,
+//       visitreason: patient.reasonForVisit,
+//       status: "pending", 
+//       treatmentDate: localVisitDate,
+//     });
+
+//     await treatment.save();
+
+//     io.emit("new_patient_added", patient);
+//     res.status(201).json({
+//       message: "Patient & Treatment created successfully",
+//       patient,
+//       treatment,
+//     });
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
+
+
+
+
+import mongoose from "mongoose";
+
+// 🔹 Booking Counter Model for atomic patientCode generation
+const bookingCounterSchema = new mongoose.Schema({
+  date: { type: String, unique: true }, // YYYY-MM-DD
+  count: { type: Number, default: 0 },
+});
+const BookingCounter = mongoose.model("BookingCounter", bookingCounterSchema);
+
+// Helper: Convert date to local YYYY-MM-DD
+const getLocalDateStr = (date) => {
+  const d = new Date(date || new Date());
+  const year = d.getFullYear();
+  const month = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+// Atomic booking ID generator per day
+const generateBookingIdByDate = async (visitDate) => {
+  const dateStr = getLocalDateStr(visitDate);
+
+  const counter = await BookingCounter.findOneAndUpdate(
+    { date: dateStr },
+    { $inc: { count: 1 } },
+    { new: true, upsert: true }
+  );
+
+  return `${String(counter.count).padStart(3, "0")}`; // 001, 002, ...
+};
+
+// Next permanent ID generator
+// const generateNextFixedPermanentId = async () => {
+//   const lastPatient = await PatientModel.findOne().sort({ createdAt: -1 });
+//   const lastId = lastPatient?.fixedPermanentId?.split("-")[1] || "0000";
+//   const nextId = (parseInt(lastId) + 1).toString().padStart(4, "0");
+//   return `PNo-${nextId}`;
+// };
+
+// ✅ Create or Update Patient + First Treatment
+export const createPatient = async (req, res) => {
+  const io = req.app.get("io"); // socket.io
+
+  
   const {
     patientName,
     dateOfBirth,
@@ -54,38 +194,41 @@ export const createPatient = async (req, res) => {
     phone,
     gender,
     treatmentDate,
-    booking_mode
+    booking_mode,
   } = req.body;
 
   try {
-    // Default today
+
+
+    console.log('date aya ',treatmentDate)
+    // Local visit date
     const visitDate = treatmentDate ? new Date(treatmentDate) : new Date();
-    const localVisitDate = getLocalStartOfDay(visitDate);
+    const localVisitDate = new Date(visitDate);
 
-
-
-    console.log('treatmnet data',treatmentDate)
-    // Generate patient code + permanent ID
-
-       const existingTreatment = await Treatment.findOne({
-      patientId: await PatientModel.findOne({ patientName, phone }).select("_id"),
-      treatmentDate: { $gte: localVisitDate, $lte: getLocalEndOfDay(localVisitDate) }
-    });
-
-    if (existingTreatment) {
-      return res.status(400).json({ message: "Patient already has an appointment today!" });
+    // Check if patient already has appointment today
+    const existingPatient = await PatientModel.findOne({ patientName, phone });
+    if (existingPatient) {
+      const existingTreatment = await Treatment.findOne({
+        patientId: existingPatient._id,
+        treatmentDate: {
+          $gte: new Date(localVisitDate.setHours(0, 0, 0, 0)),
+          $lte: new Date(localVisitDate.setHours(23, 59, 59, 999)),
+        },
+      });
+      if (existingTreatment) {
+        return res
+          .status(400)
+          .json({ message: "Patient already has an appointment today!" });
+      }
     }
 
-
-
+    // Generate patientCode (atomic) & fixedPermanentId
     const patientCode = await generateBookingIdByDate(localVisitDate);
     const fixedPermanentId = await generateNextFixedPermanentId();
 
-    // Check existing patient
-    let patient = await PatientModel.findOne({ patientName, phone });
-
-    if (!patient) {
-      // 🔹 New patient create
+    // Create new patient if not exists
+    let patient;
+    if (!existingPatient) {
       patient = new PatientModel({
         patientName,
         dateOfBirth,
@@ -97,38 +240,40 @@ export const createPatient = async (req, res) => {
         status: "new",
         fixedPermanentId,
         booking_mode: booking_mode || "offline",
-        treatmentDate: localVisitDate,
       });
       await patient.save();
     } else {
- 
+      patient = existingPatient;
       patient.status = "old";
       await patient.save();
     }
 
-    // 🔹 Create treatment immediately
+    // Create treatment
     const treatment = new Treatment({
-      patientCode:patientCode,
+      patientCode,
       patientId: patient._id,
       booking_mode: patient.booking_mode,
-      Patienpatientcodetcode: patient.patientCode,
       visitreason: patient.reasonForVisit,
-      status: "pending", 
+      status: "pending",
       treatmentDate: localVisitDate,
     });
 
     await treatment.save();
 
-    io.emit("new_patient_added", patient);
+    // Emit via socket
+    if (io) io.emit("new_patient_added", patient);
+
     res.status(201).json({
       message: "Patient & Treatment created successfully",
       patient,
       treatment,
     });
   } catch (error) {
+    console.error(error);
     res.status(400).json({ message: error.message });
   }
 };
+
 
 
 

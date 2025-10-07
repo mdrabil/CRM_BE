@@ -21,9 +21,11 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://crm-fr-nine.vercel.app',
-    'https://mcr0j5fm-5173.inc1.devtunnels.ms'
+    'https://crm-fr-nine.vercel.app', // vercel 
+    'https://mcr0j5fm-5173.inc1.devtunnels.ms', //port
+    'https://mcr0j5fm-5173.inc1.devtunnels.ms' // port
   ],
+  
   credentials: true
 }));
 app.use(cors())
