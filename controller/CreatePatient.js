@@ -142,6 +142,7 @@ const getLocalEndOfDay = (date) => {
 
 
 import mongoose from "mongoose";
+import { generateNextTreatmentNO } from "../utility/genrateNextNumber.js";
 
 // 🔹 Booking Counter Model for atomic patientCode generation
 const bookingCounterSchema = new mongoose.Schema({
@@ -248,6 +249,9 @@ export const createPatient = async (req, res) => {
       await patient.save();
     }
 
+
+    const treatmentNo = await generateNextTreatmentNO();
+
     // Create treatment
     const treatment = new Treatment({
       patientCode,
@@ -256,6 +260,7 @@ export const createPatient = async (req, res) => {
       visitreason: patient.reasonForVisit,
       status: "pending",
       treatmentDate: localVisitDate,
+      treatmentNo
     });
 
     await treatment.save();
@@ -434,70 +439,6 @@ export const updatePatientStatus = async (req, res) => {
 };
 
 
-
-
-// POST /api/treatments
-export const addTreatment = async (req, res) => {
-  const io = req.app.get("io");
-
-   try {
-    const {  patientId, patientmedicine ,patinentProblem,symptoms  } = req.body;
-
-    // Validate required fields
-    if (!patientId) {
-      return res.status(400).json({ message: "Patient name and ID are required" });
-    }
-
-    // Optionally check if patient exists in Patient model (if available)
-    const existingPatient = await PatientModel.findById(patientId);
-    if (!existingPatient) {
-      return res.status(404).json({ message: "Patient not found" });
-    }
-
-
-    // Convert patientmedicine to medicines as per schema
-    const medicines = patientmedicine.map((med) => ({
-      name: med.name,
-      quantity: 1, // Or dynamic if needed
-      dosageMl: med.dose ? parseFloat(med.dose) : undefined,
-      type: med.name.toLowerCase().includes("syrup") ? "Syrup" : "Tablet", // Just example logic
-      times: med.frequency,
-    }));
-    
-    // Create new treatment
-    const newTreatment = new Treatment({
-         todaybooking_mode:existingPatient?.booking_mode,
-      todayPatientcode:existingPatient?.patientCode,
-      todayvisitreason:existingPatient?.reasonForVisit,
-      patientId,
-      medicines,
-      doctorName: "Dr. HAKIM", 
-      patinentProblem,
-      symptoms
-    });
-
-
-    console.log('success')
-    await newTreatment.save();
-    console.log('success 1')
-
-      existingPatient.status = "checked_by_doctor";
-    existingPatient.lastTreatmentId = newTreatment._id;
-    await existingPatient.save();
-
-    io.emit("treatment_added", { existingPatient, newTreatment });
-    res.status(201).json({ message: "Treatment added", newTreatment });
-  
-
-    await existingPatient.save();
-    console.log('success3')
-
-    res.status(201).json({ message: "Treatment created successfully", newTreatment });
-  } catch (error) {
-    res.status(500).json({ message: "Error creating treatment", error: error.message });
-  }
-
-}
 
 
 

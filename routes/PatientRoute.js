@@ -9,7 +9,7 @@ import {
   getPatientsByStatus,
   updatePatientStatus,
   getCompletedPatients,
-  addTreatment,
+  
   // getTreatments,
   // dispenseMedicines,
   giveInstructions
@@ -44,9 +44,6 @@ router.patch("/:id/status", updatePatientStatus);
 router.delete("/:id", deletePatient);
 // Get patients by status
 
-// ------------------ TREATMENT ROUTES ------------------
-// Add treatment for a patient
-router.post("/treatments", addTreatment);
 
 // Get treatments (optionally by patientId)
 // router.get("/treatments", getTreatments);

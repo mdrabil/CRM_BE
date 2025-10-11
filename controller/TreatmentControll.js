@@ -90,21 +90,142 @@ const getLocalEndOfDay = (date) => {
 
 // all but i am ading filter 
 
+
+
+
+
+// export const getTreatments = async (req, res) => {
+//   try {
+//     const { patientId } = req.query;
+//     const filter = {};
+//     if (patientId) filter.patientId = patientId;
+
+//     // const treatments = await Treatment.find(filter).populate("patientId");
+//         const treatments = await Treatment.find({ status: "completed" }).populate("patientId");
+
+//     res.status(200).json(treatments);
+//   } catch (error) {
+//     res.status(400).json({ message: error.message });
+//   }
+// };
+
+
+
+// GET /api/treatments?page=1&limit=50&search=
+// ✅ GET /api/treatments?page=1&limit=50&search=&status=&date=
+// export const getTreatments = async (req, res) => {
+//   try {
+//     const page = parseInt(req.query.page) || 1;
+//     const limit = parseInt(req.query.limit) || 1;
+//     const { search, status, date } = req.query;
+
+//     // ✅ Base query (completed treatments only)
+//     const query = { status: "completed" };
+
+
+//     console.log('data query ka page',page)
+//     console.log('data query ka limit',limit)
+//     console.log('data query ka serach ',search)
+//     console.log('data query ka status',status)
+//     console.log('data query ka date',date)
+
+
+//     // ✅ Optional filters
+//     if (status) query.status = status;
+//     if (date) query.treatmentDate = { $regex: date, $options: "i" };
+
+//     // ✅ Build search regex
+//     const regex = search ? new RegExp(search, "i") : null;
+
+//     // ✅ Core query
+//     let treatmentsQuery = Treatment.find(query).populate("patientId");
+
+//     // ✅ If search by patientCode or patient name
+//     if (regex) {
+//       treatmentsQuery = Treatment.find({
+//         ...query,
+//         $or: [
+//           { patientCode: regex },
+//           { "patientId.name": regex }, // will match after populate
+//         ],
+//       }).populate({
+//         path: "patientId",
+//         match: { name: regex },
+//       });
+//     }
+
+//     // ✅ Pagination logic
+//     const total = await Treatment.countDocuments(query);
+//     const treatments = await treatmentsQuery
+//       .skip((page - 1) * limit)
+//       .limit(limit)
+//       .sort({ createdAt: -1 });
+
+//     res.json({
+//       status: true,
+//       total,
+//       totalPages: Math.ceil(total / limit),
+//       page,
+//       limit,
+//       treatments,
+//     });
+//   } catch (err) {
+//     res.status(500).json({ status: false, message: err.message });
+//   }
+// };
+
+
 export const getTreatments = async (req, res) => {
   try {
-    const { patientId } = req.query;
-    const filter = {};
-    if (patientId) filter.patientId = patientId;
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const { search, status, date } = req.query;
 
-    // const treatments = await Treatment.find(filter).populate("patientId");
-        const treatments = await Treatment.find({ status: "completed" }).populate("patientId");
+    const query = { status: "completed" };
 
-    res.status(200).json(treatments);
-  } catch (error) {
-    res.status(400).json({ message: error.message });
+    if (status) query.status = status;
+    if (date) query.treatmentDate = { $regex: date, $options: "i" };
+
+    // ✅ Step 1: Apply search
+    let searchFilter = {};
+    if (search) {
+      const regex = new RegExp(search, "i");
+      searchFilter = {
+        $or: [
+          { patientCode: regex },
+          { "patientId.patientName": regex }, // patient name
+          { "patientId.fixedPermanentId": regex }, // patient name
+          { "patientId.phone": regex }, // patient name
+        ],
+      };
+    }
+
+    // ✅ Step 2: Merge both query + search
+    const finalQuery = { ...query, ...searchFilter };
+
+    // ✅ Step 3: Count total before pagination
+    const total = await Treatment.countDocuments(finalQuery);
+
+    // ✅ Step 4: Fetch with pagination
+    const treatments = await Treatment.find(finalQuery)
+      .populate("patientId")
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .sort({ createdAt: -1 });
+
+    // ✅ Step 5: Send response
+    res.json({
+      status: true,
+      total,
+      totalPages: Math.ceil(total / limit),
+      page,
+      limit,
+      treatments,
+    });
+  } catch (err) {
+    res.status(500).json({ status: false, message: err.message });
   }
 };
-
 
 
 
@@ -113,9 +234,10 @@ export const getTreatments = async (req, res) => {
 export const getTreatmentsFilter = async (req, res) => {
   try {
     const { id, name, patientCode, phone, date ,paitentId } = req.query;
-
+  const skip = parseInt(req.query.skip) || 0;
+  const limit = parseInt(req.query.limit) || 1;
     const filter = {};
-
+console.log('limit aa rha hai',limit)
     if (id) filter._id = id;
     if (patientCode) filter.patientCode = { $regex: patientCode, $options: "i" };
     if (date) {
@@ -136,7 +258,13 @@ export const getTreatmentsFilter = async (req, res) => {
       if (phone) populateOptions.match.phone = { $regex: phone, $options: "i" };
     }
 
-    let query = Treatment.find(filter);
+    // let query = Treatment.find(filter)
+    let query = Treatment.find(filter)
+  .skip(skip)
+  .limit(limit)
+  .sort({ createdAt: -1 });
+
+    let total = await Treatment?.countDocuments(filter)
 
     if (Object.keys(populateOptions).length) {
       query = query.populate(populateOptions);
@@ -149,9 +277,132 @@ export const getTreatmentsFilter = async (req, res) => {
     // Filter out treatments with no populated patient (because of match)
     const filteredTreatments = treatments.filter(t => t.patientId !== null);
 
-    res.status(200).json(filteredTreatments);
+    // res.status(200).json({filteredTreatments,total});
+
+
+    res.status(200).json({
+  status: true,
+  total,
+  skip,
+  limit,
+  treatments: filteredTreatments
+});
   } catch (err) {
     res.status(500).json({ status: false, message: err.message });
+  }
+};
+
+
+
+
+
+// ✅ POST /api/treatments (Add or Update)
+export const addTreatment = async (req, res) => {
+  const io = req.app.get("io");
+
+  try {
+    const {
+      patientId,
+      patientCode,
+      patientmedicine,
+      patinentProblem,
+      symptoms,
+      restrictions,
+      booking_mode,
+      treatmentDate,
+      mediCineDuration,
+      treatmentIdOptinal, // optional
+    } = req.body;
+
+
+    
+
+    // 🔸 Validation
+    if (!patientId) {
+      return res
+        .status(400)
+        .json({ status: false, message: "Patient ID is required" });
+    }
+
+    if (!Array.isArray(patientmedicine) || patientmedicine.length === 0) {
+      return res
+        .status(400)
+        .json({ status: false, message: "At least one medicine is required" });
+    }
+
+    // 🔹 Format medicines array properly
+    const medicines = patientmedicine.map((med) => ({
+      name: med.name,
+      quantity: med.quantity || 1,
+      dosageMl: med.dose ? parseFloat(med.dose) : undefined,
+      type: med.name?.toLowerCase().includes("syrup") ? "Syrup" : "Tablet",
+      times: med.frequency,
+    }));
+
+    let treatmentData = {
+      patientId,
+      patientCode,
+      medicines,
+      doctorName: "Dr. HAKIM",
+      patinentProblem,
+      symptoms,
+      restrictions,
+      booking_mode,
+      treatmentDate,
+      mediCineDuration,
+      status: "checked_by_doctor",
+    };
+
+    let result;
+
+    // ✅ IF treatmentIdOptinal exists → Update
+    if (treatmentIdOptinal) {
+      const existingTreatment = await Treatment.findById(treatmentIdOptinal);
+
+      if (!existingTreatment) {
+        return res
+          .status(404)
+          .json({ status: false, message: "Treatment ID not found" });
+      }
+
+           treatmentData.patientCode = existingTreatment.patientCode;
+      treatmentData.booking_mode = existingTreatment.booking_mode;
+      treatmentData.visitreason = existingTreatment.reasonForVisit;
+
+
+      // Update the existing record
+      result = await Treatment.findByIdAndUpdate(
+        treatmentIdOptinal,
+        { $set: treatmentData },
+        { new: true }
+      );
+
+      io.emit("treatment_updated", { result });
+      return res.status(200).json({
+        status: true,
+        message: "Treatment updated successfully",
+        data: result,
+      });
+    }
+
+    // ✅ ELSE → Create new record
+    const newTreatment = new Treatment(treatmentData);
+    await newTreatment.save();
+
+    io.emit("treatment_added", { newTreatment });
+
+    res.status(201).json({
+      status: true,
+      message: "Treatment created successfully",
+      data: newTreatment,
+    });
+  } catch (error) {
+    console.error("❌ Error in addTreatment:", error);
+    res.status(500).json({
+      status: false,
+      message: "Error creating or updating treatment",
+      error: error.message,
+    });
   }
 };
 
@@ -235,13 +486,13 @@ export const updateTreatmentAgain = async (req, res) => {
     const io = req.app.get("io");
   try {
     const { id } = req.params; // Treatment ID
-    const { patientmedicine, patinentProblem, symptoms, restrictions ,nOfDaysMedicine } = req.body;
+    const { patientmedicine, patinentProblem, symptoms, restrictions ,medicineDuration } = req.body;
 
     if (!id) {
       return res.status(400).json({ message: "Treatment ID is required" });
     }
 
-const nOfDaysMedicineGet =nOfDaysMedicine ? nOfDaysMedicine : "5"
+const medicineDurationGet =medicineDuration ? medicineDuration : "5"
 
     const medicines = patientmedicine.map((med) => ({
       name: med.name,
@@ -268,7 +519,7 @@ const nOfDaysMedicineGet =nOfDaysMedicine ? nOfDaysMedicine : "5"
         medicines,
         doctorName: "Dr. Hakim",
         status: "checked_by_doctor",
-        nOfDaysMedicine:nOfDaysMedicineGet
+        medicineDuration:medicineDurationGet
       },
       { new: true }
     );
@@ -315,14 +566,14 @@ const nOfDaysMedicineGet =nOfDaysMedicine ? nOfDaysMedicine : "5"
 // export const dispenseMedicines = async (req, res) => {
 //   try {
 //     const { id } = req.params;
-//     const { patientmedicine, nOfDaysMedicine, status } = req.body;
+//     const { patientmedicine, medicineDuration, status } = req.body;
 
 //     if (!id) {
 //       return res.status(400).json({ message: "Treatment ID is required" });
 //     }
 
 //     // Default days if not provided
-//     const nOfDaysMedicineGet = nOfDaysMedicine || 5;
+//     const medicineDurationGet = medicineDuration || 5;
 
 //     const medicines = patientmedicine.map((med) => ({
 //       name: med.name,
@@ -344,7 +595,7 @@ const nOfDaysMedicineGet =nOfDaysMedicine ? nOfDaysMedicine : "5"
 //         medicines,
 //         dispensed: true,
 //         status: status || "medicines_dispensed",
-//         nOfDaysMedicine: nOfDaysMedicineGet,
+//         medicineDuration: medicineDurationGet,
 //       },
 //       { new: true }
 //     );
@@ -370,7 +621,7 @@ export const dispenseMedicines = async (req, res) => {
 
   try {
     const { id } = req.params;
-    const { patientmedicine, nOfDaysMedicine, status } = req.body;
+    const { patientmedicine, medicineDuration, status } = req.body;
 
     if (!id) {
       return res.status(400).json({ message: "Treatment ID is required" });
@@ -381,7 +632,7 @@ export const dispenseMedicines = async (req, res) => {
       return res.status(404).json({ message: "Treatment not found" });
     }
 
-    const nOfDaysMedicineGet = nOfDaysMedicine || existingTreatment.nOfDaysMedicine || 5;
+    const medicineDurationGet = medicineDuration || existingTreatment.medicineDuration || 5;
 
     let totalPrice = 0;
 
@@ -417,7 +668,7 @@ console.log('quaitntu',quantity)
         medicines,
         dispensed: true,
         status: status || existingTreatment.status,
-        nOfDaysMedicine: nOfDaysMedicineGet,
+        medicineDuration: medicineDurationGet,
         totalPrice,
       },
       { new: true }
@@ -450,11 +701,11 @@ export const FinalMedicineUpdate = async (req, res) => {
     const { id } = req.params;
     let { 
       patientmedicine, 
-      nOfDaysMedicine, 
+      medicineDuration, 
       status, 
       discount, 
       totalPrice, 
-      DueAmountPrice,
+      dueAmountPrice,
       payable,
       paymentHistory,
       
@@ -464,7 +715,7 @@ export const FinalMedicineUpdate = async (req, res) => {
 
     const existingTreatment = await Treatment.findById(id);
     if (!existingTreatment) return res.status(404).json({ message: "Treatment not found" });
-    const nOfDaysMedicineGet = nOfDaysMedicine || existingTreatment.nOfDaysMedicine || 5;
+    const medicineDurationGet = medicineDuration || existingTreatment.medicineDuration || 5;
  
     const medicines = await Promise.all(
       (patientmedicine || []).map(async (med) => {
@@ -513,17 +764,31 @@ export const FinalMedicineUpdate = async (req, res) => {
         dispensed: true,
         status: status || "completed",
   
-        nOfDaysMedicine: nOfDaysMedicineGet,
+        medicineDuration: medicineDurationGet,
         totalPrice: totalPrice,
         discountPercent: discount,
         instructionsGiven:true,
-        paymentStatus:DueAmountPrice ? 'Due' : "paid" ,
+        paymentStatus:dueAmountPrice ? 'Due' : "paid" ,
     payable:payable  ,
-        DueAmountPrice: DueAmountPrice,
+        dueAmountPrice: dueAmountPrice,
         paymentHistory: updatedPaymentHistory,
       },
       { new: true }
     );
+
+    if (existingTreatment?.patientId) {
+      const patientId =
+        existingTreatment.patientId._id?.toString() ||
+        existingTreatment.patientId?.toString();
+
+      if (patientId) {
+        const existingPatient = await PatientModel.findById(patientId);
+        if (existingPatient) {
+          existingPatient.status = "old";
+          await existingPatient.save();
+        }
+      }
+    }
 
 
           io.emit("completed", {  treatment:updatedTreatment });
@@ -698,3 +963,25 @@ export const getBookingReport = async (req, res) => {
 
 
 
+
+
+// DELETE
+export const deleteMedicineById = async (req, res) => {
+  const { treatmentId, medId } = req.params;
+
+  try {
+    const updatedTreatment = await Treatment.findByIdAndUpdate(
+      treatmentId,
+      { $pull: { medicines: { _id: medId } } },
+      { new: true }
+    );
+
+    if (!updatedTreatment) {
+      return res.status(404).json({ message: "Treatment not found" });
+    }
+
+    res.status(200).json({ message: "Medicine deleted successfully", treatment: updatedTreatment });
+  } catch (error) {
+    res.status(500).json({ message: "Error deleting medicine", error: error.message });
+  }
+};

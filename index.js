@@ -21,14 +21,12 @@ app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:5174',
-    'https://crm-fr-nine.vercel.app', // vercel 
-    'https://mcr0j5fm-5173.inc1.devtunnels.ms', //port
-    'https://mcr0j5fm-5173.inc1.devtunnels.ms' // port
+    'https://crm-fr-nine.vercel.app', 
   ],
-  
   credentials: true
 }));
-app.use(cors())
+
+
 app.use(express.json());
 app.use(bodyParser.json())
 app.get('/',(req,res)=>{
@@ -104,5 +102,12 @@ app.set("io", io);
 
 
 
+// const PORT = process.env.PORT || 8000;
+// server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
 const PORT = process.env.PORT || 8000;
-server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+server.listen(PORT, () =>
+  console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+);
+
+

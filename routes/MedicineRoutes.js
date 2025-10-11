@@ -17,3 +17,4 @@ router.put("/:id", updateMedicine);
 router.delete("/:id",authMiddleware,authorize('delete'), deleteMedicine);
 
 export default router;
+
