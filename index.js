@@ -97,8 +97,24 @@ app.use('/api/users', UsersRoutes);
 app.set("io", io);
 
 // In controller
-
-
+// If using reverse proxy in future:
+// app.set('trust proxy', true);
+app.set('trust proxy', true)
+// === DIAGNOSTIC LOGGER: add this BEFORE routes ===
+// app.use((req, res, next) => {
+//   const ipRaw = req.headers['x-forwarded-for'] || req.connection?.remoteAddress || req.socket?.remoteAddress || '';
+//   const ip = (ipRaw + '').replace('::ffff:', '');
+//   console.log('=== Incoming Request ===');
+//   console.log('Time:', new Date().toISOString());
+//   console.log('Method:', req.method, 'Path:', req.originalUrl);
+//   console.log('Client IP raw:', ipRaw);
+//   console.log('Client IP parsed:', ip);
+//   console.log('Headers x-forwarded-for:', req.headers['x-forwarded-for']);
+//   console.log('Host header:', req.headers.host);
+//   console.log('========================');
+//   next();
+// });
+// ==
 
 
 
@@ -106,8 +122,12 @@ app.set("io", io);
 // server.listen(PORT, () => console.log(`Server running on port ${PORT}`));
 
 const PORT = process.env.PORT || 8000;
-server.listen(PORT, () =>
-  console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+// server.listen(PORT, () =>
+//   console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
+// );
+server.listen(PORT, '0.0.0.0', () =>
+  console.log(`🚀 Server running on port ${PORT}`)
 );
+
 
 

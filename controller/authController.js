@@ -37,6 +37,12 @@ const hashedPassword = await bcrypt.hash(password, 10);
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
+    console.log('[login controller] body:', req.body);
+  console.log('[login controller] headers:', {
+    'x-forwarded-for': req.headers['x-forwarded-for'],
+    host: req.headers.host,
+    ua: req.headers['user-agent']
+  });
   const user = await UserModel.findOne({ email }).populate('role');
   if (!user) return res.status(404).json({ message: 'User not found' });
 
