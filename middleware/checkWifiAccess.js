@@ -19,7 +19,7 @@
 //   }
 // }
 // middleware/checkWifiAccess.js
-export default function checkWifiAccess(req, res, next) {
+// export default function checkWifiAccess(req, res, next) {
 //   // agar behind proxy hai to app.set('trust proxy', true') set karein (server file me)
 //   const rawIp =
 //     req.headers['x-forwarded-for'] ||
@@ -40,19 +40,21 @@ export default function checkWifiAccess(req, res, next) {
 //     message: '⚠️ Please connect to Office Wi-Fi to login',
 //   });
 
-const clientIp =
-  (req.headers['x-forwarded-for'] ||
-   req.connection.remoteAddress ||
-   req.socket.remoteAddress || '')
-  .replace('::ffff:', '');
+// const clientIp =
+//   (req.headers['x-forwarded-for'] ||
+//    req.connection.remoteAddress ||
+//    req.socket.remoteAddress || '')
+//   .replace('::ffff:', '');
 
-if (clientIp.startsWith('192.168.1.')) {
-  next(); // office Wi-Fi se hai
-} else {
-  return res.status(403).json({ success: false, message: '⚠️ Connect to Office Wi-Fi' });
-}
+// if (clientIp.startsWith('192.168.1.')) {
+//   next(); // office Wi-Fi se hai
+// } else {
+//   return res.status(403).json({ success: false, message: '⚠️ Connect to Office Wi-Fi' });
+// }
 
-}
+// }
+
+
 
 
 
@@ -82,3 +84,24 @@ if (clientIp.startsWith('192.168.1.')) {
 //     clientIp: clientIp || null
 //   });
 // }
+
+
+
+
+// middleware/checkWifiAccess.js
+export default function checkWifiAccess(req, res, next) {
+  const clientIp =
+    (req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || '')
+      .replace('::ffff:', ''); // IPv6 to IPv4
+
+  console.log('Client IP:', clientIp);
+
+  // ✅ Allowed IP range
+  const allowedRange = /^192\.168\.1\./; // 192.168.1.x
+
+  if (!allowedRange.test(clientIp)) {
+    return res.status(403).json({ message: 'Access denied. Connect to office Wi-Fi.' });
+  }
+
+  next();
+}

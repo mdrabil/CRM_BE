@@ -109,12 +109,12 @@ app.set("io", io);
 app.set('trust proxy', true)
 
 const PORT = process.env.PORT || 8000;
-// server.listen(PORT, () =>
-//   console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
-// );
-server.listen(PORT, '0.0.0.0', () =>
-  console.log(`🚀 Server running on port ${PORT}`)
+server.listen(PORT, () =>
+  console.log(`🚀 Server running in ${process.env.NODE_ENV} mode on port ${PORT}`)
 );
+// server.listen(PORT, '0.0.0.0', () =>
+//   console.log(`🚀 Server running on port ${PORT}`)
+// );
 
 
 
