@@ -89,19 +89,84 @@
 
 
 // middleware/checkWifiAccess.js
+// export default function checkWifiAccess(req, res, next) {
+//   const clientIp =
+//     (req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || '')
+//       .replace('::ffff:', ''); // IPv6 to IPv4
+
+//   console.log('Client IP:', clientIp);
+
+//   // ✅ Allowed IP range
+//   const allowedRange = /^192\.168\.1\./; // 192.168.1.x
+
+//   if (!allowedRange.test(clientIp)) {
+//     return res.status(403).json({ message: 'Access denied. Connect to office Wi-Fi.' });
+//   }
+
+//   next();
+// }
+
+
+
+
+// middleware/checkWifiAccess.js
+// export default function checkWifiAccess(req, res, next) {
+//   const clientIp =
+//     (req.headers["x-forwarded-for"] ||
+//       req.connection?.remoteAddress ||
+//       req.socket?.remoteAddress ||
+//       "")
+//       .replace("::ffff:", ""); // IPv6 → IPv4
+
+//   console.log("Client IP:", clientIp);
+
+//   // ✅ Sirf 192.168.1.x (office Wi-Fi) range allow karo
+//   if (clientIp.startsWith("192.168.1.") || clientIp === "127.0.0.1") {
+//     return next();
+//   } else {
+//     return res.status(403).json({
+//       message: "Access denied — Please connect to office Wi-Fi",
+//       yourIP: clientIp,
+//     });
+//   }
+// }
+
+
+
+// middleware/checkOfficeWiFi.js
 export default function checkWifiAccess(req, res, next) {
-  const clientIp =
-    (req.headers['x-forwarded-for'] || req.connection.remoteAddress || req.socket.remoteAddress || '')
-      .replace('::ffff:', ''); // IPv6 to IPv4
+  const nodeEnv = process.env.NODE_ENV || "development";
+  const allowedPublicIPs = process.env.ALLOWED_IPS?.split(",") || []; // Live office public IPs
 
-  console.log('Client IP:', clientIp);
+  let clientIp =
+    req.headers["x-forwarded-for"] ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
+    "";
+  clientIp = clientIp.replace("::ffff:", "").split(",")[0].trim();
 
-  // ✅ Allowed IP range
-  const allowedRange = /^192\.168\.1\./; // 192.168.1.x
+  console.log("🌐 Client IP:", clientIp, "| Mode:", nodeEnv);
 
-  if (!allowedRange.test(clientIp)) {
-    return res.status(403).json({ message: 'Access denied. Connect to office Wi-Fi.' });
+  if (nodeEnv === "development") {
+    if (clientIp.startsWith("192.168.1.") || clientIp === "127.0.0.1") {
+      return next(); // Local Wi-Fi OK
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: "⚠️ Connect to office Wi-Fi (local).",
+        yourIP: clientIp
+      });
+    }
+  } else {
+    if (allowedPublicIPs.includes(clientIp)) {
+      return next(); // Live office public IP OK
+    } else {
+      return res.status(403).json({
+        success: false,
+        message: "⚠️ Connect to office Wi-Fi (live).",
+        yourIP: clientIp
+      });
+    }
   }
-
-  next();
 }
+
