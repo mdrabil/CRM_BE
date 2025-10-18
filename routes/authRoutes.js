@@ -5,7 +5,7 @@ import checkWifiAccess from '../middleware/checkWifiAccess.js';
 const router = express.Router();
 
 router.post('/register', register); // First time admin
-router.post("/login", checkWifiAccess, login);
+router.post("/login", login);
 router.put('/update', updatePassword);
 
 export default router;
